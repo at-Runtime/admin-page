@@ -32,21 +32,29 @@ var UI = class {
                 'password': password
             });
         });
-        this.socket.on("authenticated",function(res){
-            that.socket.emit("database",{});
+        this.socket.on("authenticated", function (res) {
+            if (res === true) {
+                that.socket.emit("database", {});
+            }
+            else {
+                $('#uniquenameLabel')[0].innerHTML = "Uniquename <span style='color: red'>(Invalid username or password!) </span>";
+                setTimeout(function(){
+                    $('#uniquenameLabel')[0].innerHTML = "Uniquename";
+                }, 2000);
+            }
         });
-        this.socket.on("database",function(res){
+        this.socket.on("database", function (res) {
             that.loadPage(res);
             that.databasePage();
         });
     }
 
-    databasePage(){
+    databasePage() {
 
     }
 
     loadPage(page) {
-        if(this.mainDiv.innerHTML != page){
+        if (this.mainDiv.innerHTML != page) {
             this.mainDiv.innerHTML = page;
         }
     }

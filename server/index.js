@@ -34,10 +34,12 @@ io.on('connection', function (socket) {
     socket.on('signin', function (req) {
         console.log("User: " + req.username + " has requested to sign in");
         if(req.username === "aaron" && req.password === "0000") {
+            console.log("User: " + req.username + " is authenticated");
             io.emit("authenticated", true);
             isAuthenticated = true;
         }
         else{
+            console.log("User: " + req.username + " entered invalid credentials");
             io.emit("authenticated", false);
         }
     });
