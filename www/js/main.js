@@ -60,10 +60,8 @@ var UI = class {
         });
         this.socket.on("table",function (data) {
             dbdata = data;
-            //alert(dbdata);
             var grid;
             var fields = [];
-            console.log(data);
 
             Object.keys(data[0]).forEach(function(k){
                 var field = {};
@@ -79,7 +77,6 @@ var UI = class {
                 }
                 fields.push(field);
             });
-            console.log(fields);
             fields.push(
                 {
                     type: "control"
@@ -99,14 +96,31 @@ var UI = class {
         });
         $('.amenityType').click(function (e) {
            e.preventDefault();
-           activeTable = e.currentTarget.innerText;
+           activeTable = e.currentTarget.innerText.slice(0,-1).replace(/\s+/g, '_');
            $(".type.nav-link.active").removeClass('active');
            $(e.target).addClass('active');
            that.socket.emit("getTable", {
-                table:activeTable.slice(0,-1).replace(/\s+/g, '_')
+                table:activeTable
             });
 
         });
+         $('.pageType').click(function (e) {
+             e.preventDefault();
+             $(".page.nav-link.active").removeClass('active');
+             $(e.target).addClass('active');
+             if(e.currentTarget.innerText.slice(0,-1) === 'User Access Control'){
+                 that.socket.emit("getTable", {
+                     table: "USERS"
+                 });
+                 $('#amenityNav').hide();
+             }
+             else{
+                 $('#amenityNav').show();
+                 that.socket.emit("getTable", {
+                     table: activeTable
+                 });
+             }
+         });
     }
 
     loadPage(page) {

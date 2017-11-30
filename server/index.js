@@ -36,7 +36,7 @@ app.get('/media/campus-map-summer.png', function (req, res) {
 });
 
 io.on('connection', function (socket) {
-    var isAuthenticated = false;
+    socket.isAuthenticated = false;
     console.log('a user connected');
     socket.on('signin', function (req) {
         console.log("User: " + req.username + " has requested to sign in");
@@ -54,7 +54,7 @@ io.on('connection', function (socket) {
                 if(req.password === data.Item.password) {
                     console.log("User: " + req.username + " is authenticated");
                     socket.emit("authenticated", true);
-                    isAuthenticated = true;
+                    socket.isAuthenticated = true;
                 }
                 else{
                     console.log("User: " + req.username + " entered invalid credentials");
@@ -67,7 +67,7 @@ io.on('connection', function (socket) {
     });
 
     socket.on('database', function (msg) {
-        if (isAuthenticated) {
+        if (socket.isAuthenticated) {
             fs.readFile(__dirname + '/../www/html/database.html', "utf8", function (err, data) {
                 if(err){
                     console.log("Error Reading file: " + err);
@@ -81,16 +81,17 @@ io.on('connection', function (socket) {
             socket.emit('database',"ERROR: PLEASE SIGN IN");
         }
         socket.on("getTable",function (data) {
-            docClient.scan({
-                TableName: data.table
-            }, function(err, res) {
-                if (err) {
-                    console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-                } else {
-                    console.log("GetItem succeeded:");
-                    socket.emit("table",res.Items);
-                }
-            });
+            if(socket.isAuthenticated){
+                docClient.scan({
+                    TableName: data.table
+                }, function (err, res) {
+                    if (err) {
+                        console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
+                    } else {
+                        socket.emit("table", res.Items);
+                    }
+                });
+            }
         });
     });
 });
