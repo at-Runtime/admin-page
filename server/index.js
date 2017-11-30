@@ -10,7 +10,7 @@ AWS.config.update({
 });
 
 var docClient = new AWS.DynamoDB.DocumentClient();
-var PORT = 3000;
+var PORT = 80;
 
 app.get('/favicon.ico', function (req, res) {
     res.sendFile('favicon.ico',{root: __dirname + "/../"});
@@ -60,6 +60,16 @@ io.on('connection', function (socket) {
         else{
             socket.emit('database',"ERROR: PLEASE SIGN IN");
         }
+        socket.on("getTable",function (data) {
+            docClient.get({TableName: data}, function(err, res) {
+                if (err) {
+                    console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
+                } else {
+                    console.log("GetItem succeeded:");
+                    socket.emit("table",res);
+                }
+            });
+        });
     });
 });
 
