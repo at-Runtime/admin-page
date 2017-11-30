@@ -40,15 +40,30 @@ io.on('connection', function (socket) {
     console.log('a user connected');
     socket.on('signin', function (req) {
         console.log("User: " + req.username + " has requested to sign in");
-        if(req.username === "aaron" && req.password === "0000") {
-            console.log("User: " + req.username + " is authenticated");
-            socket.emit("authenticated", true);
-            isAuthenticated = true;
-        }
-        else{
-            console.log("User: " + req.username + " entered invalid credentials");
-            socket.emit("authenticated", false);
-        }
+        var params = {
+            TableName: "USERS",
+            Key:{
+                "username": req.username
+            }
+        };
+        docClient.get(params, function(err, data) {
+            if(err){
+                console.log("Error getting user credentials: " + err);
+            }
+            else{
+                if(req.password === data.Item.password) {
+                    console.log("User: " + req.username + " is authenticated");
+                    socket.emit("authenticated", true);
+                    isAuthenticated = true;
+                }
+                else{
+                    console.log("User: " + req.username + " entered invalid credentials");
+                    socket.emit("authenticated", false);
+                }
+            }
+        });
+
+
     });
 
     socket.on('database', function (msg) {

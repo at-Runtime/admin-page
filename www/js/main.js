@@ -74,6 +74,9 @@ var UI = class {
                 if(k === "Bldg_Name"){
                     field.width = field.width + 20;
                 }
+                else if(k === "Type"){
+                    field.width = field.width + 30;
+                }
                 fields.push(field);
             });
             console.log(fields);
