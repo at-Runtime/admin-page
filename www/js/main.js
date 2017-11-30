@@ -61,6 +61,21 @@ var UI = class {
             dbdata = data;
             //alert(dbdata);
             var grid;
+            var fields = [];
+            console.log(data);
+            Object.keys(data[0]).forEach(function(k){
+                var field = {};
+                field.name = k;
+                field.type = "text";
+                field.validate = "required";
+                fields.push(field);
+            });
+            console.log(fields);
+            fields.push(
+                {
+                    type: "control"
+                }
+            );
             grid = $('#databaseTable').jsGrid({
                 width: "100%",
                 height: "400px",
@@ -69,18 +84,7 @@ var UI = class {
                 sorting: true,
                 paging: true,
                 data: dbdata,
-                fields: [
-                    {name: "Blgd_ID", type: "text", validate: "required"},
-                    {name: "Bldg_Name", type: "text", validate: "required"},
-                    {name: "Mon_Hours", type: "text", validate: "required"},
-                    {name: "Tue_Hours", type: "text", validate: "required"},
-                    {name: "Wed_Hours", type: "text", validate: "required"},
-                    {name: "Thu_Hours", type: "text", validate: "required"},
-                    {name: "Fri_Hours", type: "text", validate: "required"},
-                    {name: "Sat_Hours", type: "text", validate: "required"},
-                    {name: "Sun_Hours", type: "text", validate: "required"},
-                    {type: "control"}
-                ]
+                fields: fields
             });
         });
     }
