@@ -78,7 +78,18 @@ io.on('connection', function (socket) {
                     socket.emit("table",res);
                 }
             });*/
-           socket.emit("table","Database scan not setup yet...");
+           socket.emit("table",[
+               {
+                   "Blgd_ID": "MESL",
+                   "Bldg_Name": "Manufacturing Engineering Systems Lab",
+                   "Mon_hours": "10-10",
+                   "Tue_Hours": "10-10",
+                   "Wed_Hours": "10-10",
+                   "Thu_Hours": "10-10",
+                   "Fri_Hours": "10-10",
+                   "Sat_Hours": "closed",
+                   "Sun_Hours": "closed"
+               }]);
         });
     });
 });
