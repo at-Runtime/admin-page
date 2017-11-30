@@ -4,12 +4,7 @@ var io = require('socket.io')(http);
 var fs = require('fs');
 var AWS = require("aws-sdk");
 
-//AWS.config.loadFromPath('./config.json');
-
-AWS.config.update({
-    region: "us-east-1",
-    endpoint: "https://dynamodb.us-east-1.amazonaws.com"
-});
+AWS.config.loadFromPath(__dirname + '/config.json');
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 var PORT = 80;
@@ -68,28 +63,16 @@ io.on('connection', function (socket) {
             socket.emit('database',"ERROR: PLEASE SIGN IN");
         }
         socket.on("getTable",function (data) {
-           /* docClient.scan({
-                TableName: data
+            docClient.scan({
+                TableName: data.table
             }, function(err, res) {
                 if (err) {
                     console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
                 } else {
                     console.log("GetItem succeeded:");
-                    socket.emit("table",res);
+                    socket.emit("table",res.Items);
                 }
-            });*/
-           socket.emit("table",[
-               {
-                   "Blgd_ID": "MESL",
-                   "Bldg_Name": "Manufacturing Engineering Systems Lab",
-                   "Mon_hours": "10-10",
-                   "Tue_Hours": "10-10",
-                   "Wed_Hours": "10-10",
-                   "Thu_Hours": "10-10",
-                   "Fri_Hours": "10-10",
-                   "Sat_Hours": "closed",
-                   "Sun_Hours": "closed"
-               }]);
+            });
         });
     });
 });

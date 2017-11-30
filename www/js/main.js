@@ -68,6 +68,7 @@ var UI = class {
                 field.name = k;
                 field.type = "text";
                 field.validate = "required";
+                field.width = 10*k.length;
                 fields.push(field);
             });
             console.log(fields);
@@ -77,8 +78,8 @@ var UI = class {
                 }
             );
             grid = $('#databaseTable').jsGrid({
-                width: "100%",
-                height: "400px",
+                width: "auto",
+                height: "auto",
                 inserting: true,
                 editing: true,
                 sorting: true,
