@@ -61,7 +61,9 @@ io.on('connection', function (socket) {
             socket.emit('database',"ERROR: PLEASE SIGN IN");
         }
         socket.on("getTable",function (data) {
-            docClient.get({TableName: data}, function(err, res) {
+            docClient.scan({
+                TableName: data
+            }, function(err, res) {
                 if (err) {
                     console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
                 } else {
