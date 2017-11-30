@@ -54,6 +54,7 @@ var UI = class {
     databasePage() {
         var dbdata;
         var activeTable = "BUILDINGS";
+        var that = this;
         this.socket.emit("getTable", {
             table:activeTable
         });
@@ -63,6 +64,7 @@ var UI = class {
             var grid;
             var fields = [];
             console.log(data);
+
             Object.keys(data[0]).forEach(function(k){
                 var field = {};
                 field.name = k;
@@ -81,7 +83,7 @@ var UI = class {
                 }
             );
             grid = $('#databaseTable').jsGrid({
-                width: "auto",
+                width: "100%",
                 height: "auto",
                 pageSize: 6,
                 inserting: true,
@@ -91,6 +93,16 @@ var UI = class {
                 data: dbdata,
                 fields: fields
             });
+        });
+        $('.amenityType').click(function (e) {
+           e.preventDefault();
+           activeTable = e.currentTarget.innerText;
+           $(".type.nav-link.active").removeClass('active');
+           $(e.target).addClass('active');
+           that.socket.emit("getTable", {
+                table:activeTable.slice(0,-1).replace(/\s+/g, '_')
+            });
+
         });
     }
 
