@@ -3,12 +3,15 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
 var AWS = require("aws-sdk");
+var process = require("process");
 
 AWS.config.loadFromPath(__dirname + '/config.json');
 
 var docClient = new AWS.DynamoDB.DocumentClient();
-var PORT = 80;
-
+var PORT = 3000;
+if(process.geteuid() == 0){
+    PORT = 80;
+}
 app.get('/favicon.ico', function (req, res) {
     res.sendFile('favicon.ico',{root: __dirname + "/../"});
 });
