@@ -4,12 +4,12 @@ var io = require('socket.io')(http);
 var fs = require('fs');
 var AWS = require("aws-sdk");
 
-AWS.config.loadFromPath('./config.json');
+//AWS.config.loadFromPath('./config.json');
 
-/*AWS.config.update({
+AWS.config.update({
     region: "us-east-1",
     endpoint: "https://dynamodb.us-east-1.amazonaws.com"
-});*/
+});
 
 var docClient = new AWS.DynamoDB.DocumentClient();
 var PORT = 80;
