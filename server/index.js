@@ -63,7 +63,7 @@ io.on('connection', function (socket) {
             socket.emit('database',"ERROR: PLEASE SIGN IN");
         }
         socket.on("getTable",function (data) {
-            docClient.scan({
+           /* docClient.scan({
                 TableName: data
             }, function(err, res) {
                 if (err) {
@@ -72,7 +72,8 @@ io.on('connection', function (socket) {
                     console.log("GetItem succeeded:");
                     socket.emit("table",res);
                 }
-            });
+            });*/
+           socket.emit("table","Database scan not setup yet...");
         });
     });
 });
