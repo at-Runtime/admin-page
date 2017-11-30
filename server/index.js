@@ -5,8 +5,10 @@ var fs = require('fs');
 
 var PORT = 3000;
 
+var connections = [];
+
 app.get('/favicon.ico', function (req, res) {
-    res.sendFile('favicon.ico');
+    res.sendFile('favicon.ico',{root: __dirname + "/../"});
 });
 
 app.get('/', function (req, res) {
@@ -29,29 +31,31 @@ app.get('/media/campus-map-summer.png', function (req, res) {
 });
 
 io.on('connection', function (socket) {
+    //var connectionNum = connections.length;
+    //connections[connectionNum] = io.of('')
     var isAuthenticated = false;
     console.log('a user connected');
     socket.on('signin', function (req) {
         console.log("User: " + req.username + " has requested to sign in");
         if(req.username === "aaron" && req.password === "0000") {
             console.log("User: " + req.username + " is authenticated");
-            io.emit("authenticated", true);
+            socket.emit("authenticated", true);
             isAuthenticated = true;
         }
         else{
             console.log("User: " + req.username + " entered invalid credentials");
-            io.emit("authenticated", false);
+            socket.emit("authenticated", false);
         }
     });
 
     socket.on('database', function (msg) {
         if (isAuthenticated) {
             fs.readFile('../www/html/database.html', "utf8", function (err, data) {
-                io.emit('database', data);
+                socket.emit('database', data);
             });
         }
         else{
-            io.emit('database',"ERROR: PLEASE SIGN IN");
+            socket.emit('database',"ERROR: PLEASE SIGN IN");
         }
     });
 });
