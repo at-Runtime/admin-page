@@ -2,10 +2,15 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
+var AWS = require("aws-sdk");
 
+AWS.config.update({
+    region: "us-east-1",
+    endpoint: "https://dynamodb.us-east-1.amazonaws.com"
+});
+
+var docClient = new AWS.DynamoDB.DocumentClient();
 var PORT = 3000;
-
-var connections = [];
 
 app.get('/favicon.ico', function (req, res) {
     res.sendFile('favicon.ico',{root: __dirname + "/../"});
@@ -31,8 +36,6 @@ app.get('/media/campus-map-summer.png', function (req, res) {
 });
 
 io.on('connection', function (socket) {
-    //var connectionNum = connections.length;
-    //connections[connectionNum] = io.of('')
     var isAuthenticated = false;
     console.log('a user connected');
     socket.on('signin', function (req) {
