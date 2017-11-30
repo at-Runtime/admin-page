@@ -59,7 +59,7 @@ var UI = class {
         });
         this.socket.on("table",function (data) {
             dbdata = data;
-            alert(dbdata);
+            //alert(dbdata);
             var grid;
             grid = $('#databaseTable').jsGrid({
                 width: "100%",

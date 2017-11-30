@@ -55,8 +55,13 @@ io.on('connection', function (socket) {
 
     socket.on('database', function (msg) {
         if (isAuthenticated) {
-            fs.readFile('../www/html/database.html', "utf8", function (err, data) {
-                socket.emit('database', data);
+            fs.readFile(__dirname + '/../www/html/database.html', "utf8", function (err, data) {
+                if(err){
+                    console.log("Error Reading file: " + err);
+                }
+                else{
+                    socket.emit('database', data);
+                }
             });
         }
         else{
