@@ -26,7 +26,7 @@ var UI = class {
         var username, password;
         this.mainDiv.innerHTML = this.signInHTML;
         $('#signin').click(function () {
-            username = $('#username')[0].value;
+            username = $('#username')[0].value.toLowerCase();
             password = $('#password')[0].value;
             that.socket.emit('signin', {
                 'username': username,
@@ -53,7 +53,8 @@ var UI = class {
 
     databasePage() {
         var dbdata;
-        var activeTable = "BUILDINGS";
+        var activeTable = "BUILDINGS_TEST";
+        var isUserTable = false;
         var that = this;
         this.socket.emit("getTable", {
             table:activeTable
@@ -62,18 +63,21 @@ var UI = class {
             dbdata = data;
             var grid;
             var fields = [];
-
+            console.log(data);
             Object.keys(data[0]).forEach(function(k){
                 var field = {};
                 field.name = k;
                 field.type = "text";
                 field.validate = "required";
-                field.width = 10*k.length;
+                field.width = 12*k.length;
                 if(k === "Bldg_Name"){
                     field.width = field.width + 20;
                 }
                 else if(k === "Type"){
                     field.width = field.width + 30;
+                }
+                else if(k == "i"){
+                    field.visible = false;
                 }
                 fields.push(field);
             });
@@ -91,7 +95,36 @@ var UI = class {
                 sorting: true,
                 paging: true,
                 data: dbdata,
-                fields: fields
+                fields: fields,
+                onItemInserted: function (item) {
+                    data = {};
+                    if(!isUserTable){
+                        data.activeTable = activeTable;
+                    }
+                    else{
+                        data.activeTable = "USERS";
+                    }
+                    data.item = item.item;
+                    that.socket.emit("insertItem", data);
+                },
+                onItemDeletion: function(item){
+                    if(!isUserTable){
+                        item.activeTable = activeTable;
+                    }
+                    else{
+                        item.activeTable = "USERS";
+                    }
+                    that.socket.emit("delete", item);
+                },
+                onItemUpdated: function(item){
+                    if(!isUserTable){
+                        item.activeTable = activeTable;
+                    }
+                    else{
+                        item.activeTable = "USERS";
+                    }
+                    that.socket.emit("update",item);
+                }
             });
         });
         $('.amenityType').click(function (e) {
@@ -104,11 +137,12 @@ var UI = class {
             });
 
         });
-         $('.pageType').click(function (e) {
+        $('.pageType').click(function (e) {
              e.preventDefault();
              $(".page.nav-link.active").removeClass('active');
              $(e.target).addClass('active');
              if(e.currentTarget.innerText.slice(0,-1) === 'User Access Control'){
+                 isUserTable = true;
                  that.socket.emit("getTable", {
                      table: "USERS"
                  });
@@ -116,11 +150,38 @@ var UI = class {
              }
              else{
                  $('#amenityNav').show();
+                 isUserTable = false;
                  that.socket.emit("getTable", {
                      table: activeTable
                  });
              }
-         });
+        });
+        $('#apply').click(function (e) {
+            e.preventDefault();
+            var tableData = {
+                data: $("#databaseTable").data("JSGrid").data
+            };
+            if(!isUserTable){
+                tableData.activeTable = activeTable;
+            }
+            else{
+                tableData.activeTable = "USERS";
+            }
+            console.log(tableData);
+            that.socket.emit("applyUpdate",tableData);
+        });
+        $('#cancel').click(function (e) {
+            if(!isUserTable){
+                that.socket.emit("getTable", {
+                    table: activeTable
+                });
+            }
+            else{
+                that.socket.emit("getTable", {
+                    table: "USERS"
+                });
+            }
+        });
     }
 
     loadPage(page) {

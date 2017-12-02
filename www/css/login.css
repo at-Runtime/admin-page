@@ -1593,7 +1593,7 @@ select.form-control-lg:not([size]):not([multiple]), .input-group-lg > select.for
       max-width: 960px; } }
   @media (min-width: 1200px) {
     .container {
-      max-width: 1140px; } }
+      max-width: 1500px; } }
 
 .container-fluid {
   width: 100%;
@@ -5549,7 +5549,8 @@ a.text-dark:focus, a.text-dark:hover {
   visibility: hidden !important; }
 
 body > * {
-  background-size: cover; }
+  background-size: cover;
+}
 
 .opaque-overlay {
   overflow: hidden;

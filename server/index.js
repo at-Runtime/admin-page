@@ -15,7 +15,6 @@ if(process.geteuid() == 0){
 app.get('/favicon.ico', function (req, res) {
     res.sendFile('favicon.ico',{root: __dirname + "/../"});
 });
-
 app.get('/', function (req, res) {
     res.sendFile('www/html/index.html', {root: __dirname + "/../"});
 });
@@ -88,13 +87,75 @@ io.on('connection', function (socket) {
                     if (err) {
                         console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
                     } else {
+                        res.Items.forEach(function (t,i) {
+                           t.i = i;
+                        });
+                        socket.currTable = res.Items;
                         socket.emit("table", res.Items);
+                    }
+                });
+            }
+        });
+        socket.on("insertItem",function(data){
+            if(socket.isAuthenticated){
+                var params = {
+                    TableName: data.activeTable,
+                    Item: data.item
+                };
+                docClient.put(params, function(err, data) {
+                    if (err) {
+                        console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+                    } else {
+                        console.log("Added item:", JSON.stringify(data, null, 2));
+                    }
+                });
+            }
+        });
+        socket.on("applyUpdate",function(data){
+            if(socket.isAuthenticated){
+                socket.currTable.forEach(function (t, n) {
+                    for(var i=0;i<data.data.length;i++){
+                        if(t.i == data.data[i].i){
+                            var isDifferent = false;
+                            Object.keys(data.data[i]).forEach(function (k) {
+                               if(data.data[i][k] !== t[k]){
+                                   isDifferent = true;
+                               }
+                            });
+                            if(isDifferent){
+                                //delete old entry and insert new one
+                                console.log("Deleting: " + JSON.stringify(t));
+                                console.log("Inserting: " + JSON.stringify(data.data[i]));
+                                console.log("From table: " + data.activeTable);
+                            }
+                            break;
+                        }
                     }
                 });
             }
         });
     });
 });
+
+function orderKeys(obj, expected) {
+
+    var keys = Object.keys(obj).sort(function keyOrder(k1, k2) {
+        if (k1 < k2) return -1;
+        else if (k1 > k2) return +1;
+        else return 0;
+    });
+
+    var i, after = {};
+    for (i = 0; i < keys.length; i++) {
+        after[keys[i]] = obj[keys[i]];
+        delete obj[keys[i]];
+    }
+
+    for (i = 0; i < keys.length; i++) {
+        obj[keys[i]] = after[keys[i]];
+    }
+    return obj;
+}
 
 http.listen(PORT, function () {
     console.log('listening on: ' + PORT);
