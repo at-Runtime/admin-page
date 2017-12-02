@@ -142,8 +142,13 @@ io.on('connection', function (socket) {
         });
         socket.on("updateItem",function(data){
             if(socket.isAuthenticated){
+                for(var i=0;i<socket.currTable.length;i++){
+                    if(socket.currTable[i].i == data.item.i){
+                        break;
+                    }
+                }
                 var partitionKey = {};
-                partitionKey[partitionKeys[data.activeTable]] = data.item[partitionKeys[data.activeTable]];
+                partitionKey[partitionKeys[data.activeTable]] = socket.currTable[i][partitionKeys[data.activeTable]];
                 var params = {
                     TableName: data.activeTable,
                     Key: partitionKey
