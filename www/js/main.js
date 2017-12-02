@@ -53,7 +53,7 @@ var UI = class {
 
     databasePage() {
         var dbdata;
-        var activeTable = "BUILDINGS_TEST";
+        var activeTable = "BUILDINGS";
         var isUserTable = false;
         var that = this;
         this.socket.emit("getTable", {
