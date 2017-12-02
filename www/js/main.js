@@ -79,6 +79,9 @@ var UI = class {
                 else if(k == "i"){
                     field.visible = false;
                 }
+                else if(k == "Error"){
+                    field.editing = false;
+                }
                 fields.push(field);
             });
             fields.push(

@@ -66,6 +66,8 @@ io.on('connection', function (socket) {
                     console.log("User: " + req.username + " is authenticated");
                     socket.emit("authenticated", true);
                     socket.isAuthenticated = true;
+                    socket.username = req.username;
+                    socket.access_level = data.Item.access_level;
                 }
                 else{
                     console.log("User: " + req.username + " entered invalid credentials");
@@ -103,7 +105,14 @@ io.on('connection', function (socket) {
                            t.i = i;
                         });
                         socket.currTable = res.Items;
-                        socket.emit("table", res.Items);
+                        if(data.table != "USERS"){
+                            socket.emit("table", res.Items);
+                        }
+                        else{
+                            if(socket.access_level != "owner"){
+                                socket.emit("table", [{"Error": "You do not have permission to perform this function"}]);
+                            }
+                        }
                     }
                 });
             }
