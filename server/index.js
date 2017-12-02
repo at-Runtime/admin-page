@@ -112,6 +112,9 @@ io.on('connection', function (socket) {
                             if(socket.access_level != "owner"){
                                 socket.emit("table", [{"Error": "You do not have permission to perform this function"}]);
                             }
+                            else{
+                                socket.emit("table", res.Items);
+                            }
                         }
                     }
                 });
