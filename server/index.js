@@ -50,31 +50,34 @@ io.on('connection', function (socket) {
     socket.isAuthenticated = false;
     console.log('a user connected');
     socket.on('signin', function (req) {
-        console.log("User: " + req.username + " has requested to sign in");
-        var params = {
-            TableName: "USERS",
-            Key:{
-                "username": req.username
-            }
-        };
-        docClient.get(params, function(err, data) {
-            if(err){
-                console.log("Error getting user credentials: " + err);
-            }
-            else{
-                if(req.password === data.Item.password) {
-                    console.log("User: " + req.username + " is authenticated");
-                    socket.emit("authenticated", true);
-                    socket.isAuthenticated = true;
-                    socket.username = req.username;
-                    socket.access_level = data.Item.access_level;
+            console.log("User: " + req.username + " has requested to sign in");
+            var params = {
+                TableName: "USERS",
+                Key: {
+                    "username": req.username
                 }
-                else{
-                    console.log("User: " + req.username + " entered invalid credentials");
-                    socket.emit("authenticated", false);
+            };
+            socket.username = req.username;
+            socket.password = req.password;
+            docClient.get(params, function (err, data) {
+                if (err) {
+                    console.log("Error getting user credentials: " + err);
                 }
-            }
-        });
+                else {
+                    data.Item = data.Item || {username: "", password: ""};
+                    if (socket.password === data.Item.password && data.Item.password != undefined && data.Item.password != "") {
+                        console.log("User: " + req.username + " is authenticated");
+                        socket.emit("authenticated", true);
+                        socket.isAuthenticated = true;
+                        socket.username = req.username;
+                        socket.access_level = data.Item.access_level;
+                    }
+                    else {
+                        console.log("User: " + req.username + " entered invalid credentials");
+                        socket.emit("authenticated", false);
+                    }
+                }
+            });
 
 
     });
