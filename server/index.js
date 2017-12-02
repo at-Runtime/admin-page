@@ -8,6 +8,18 @@ var process = require("process");
 AWS.config.loadFromPath(__dirname + '/config.json');
 
 var docClient = new AWS.DynamoDB.DocumentClient();
+var partitionKeys = {
+    "BUILDINGS": "Bldg_ID",
+    "BUILDINGS_TEST":"aaron_test",
+    "Emergency_Phones": "Location",
+    "MICROWAVES": "Micro_ID",
+    "OTHER": "Amen_ID",
+    "OUTLETS": "Outlet_ID",
+    "PARKING": "Lot_ID",
+    "UPRINT": "Print_ID",
+    "USERS": "username",
+    "VENDING":"Vending_ID"
+};
 var PORT = 3000;
 if(process.geteuid() == 0){
     PORT = 80;
@@ -107,6 +119,51 @@ io.on('connection', function (socket) {
                         console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
                     } else {
                         console.log("Added item:", JSON.stringify(data, null, 2));
+                    }
+                });
+            }
+        });
+        socket.on("deleteItem",function (data) {
+           if(socket.isAuthenticated){
+               var partitionKey = {};
+               partitionKey[partitionKeys[data.activeTable]] = data.item[partitionKeys[data.activeTable]];
+               var params = {
+                   TableName: data.activeTable,
+                   Key: partitionKey
+               };
+               docClient.delete(params, function(err, data) {
+                   if (err) {
+                       console.error("Unable to delete item. Error JSON:", JSON.stringify(err, null, 2));
+                   } else {
+                       console.log("DeleteItem succeeded:", JSON.stringify(data, null, 2));
+                   }
+               });
+           }
+        });
+        socket.on("updateItem",function(data){
+            if(socket.isAuthenticated){
+                var partitionKey = {};
+                partitionKey[partitionKeys[data.activeTable]] = data.item[partitionKeys[data.activeTable]];
+                var params = {
+                    TableName: data.activeTable,
+                    Key: partitionKey
+                };
+                docClient.delete(params, function(err, res) {
+                    if (err) {
+                        console.error("Unable to delete item. Error JSON:", JSON.stringify(err, null, 2));
+                    } else {
+                        console.log("DeleteItem succeeded");
+                        var params2 = {
+                            TableName: data.activeTable,
+                            Item: data.item
+                        };
+                        docClient.put(params2, function(err, data) {
+                            if (err) {
+                                console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
+                            } else {
+                                console.log("Added item:", JSON.stringify(data, null, 2));
+                            }
+                        });
                     }
                 });
             }

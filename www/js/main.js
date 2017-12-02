@@ -97,33 +97,37 @@ var UI = class {
                 data: dbdata,
                 fields: fields,
                 onItemInserted: function (item) {
-                    data = {};
+                    var insertData = {};
                     if(!isUserTable){
-                        data.activeTable = activeTable;
+                        insertData.activeTable = activeTable;
                     }
                     else{
-                        data.activeTable = "USERS";
+                        insertData.activeTable = "USERS";
                     }
-                    data.item = item.item;
-                    that.socket.emit("insertItem", data);
+                    insertData.item = item.item;
+                    that.socket.emit("insertItem", insertData);
                 },
-                onItemDeletion: function(item){
+                onItemDeleted: function(item){
+                    var deleteData = {};
                     if(!isUserTable){
-                        item.activeTable = activeTable;
+                        deleteData.activeTable = activeTable;
                     }
                     else{
-                        item.activeTable = "USERS";
+                        deleteData.activeTable = "USERS";
                     }
-                    that.socket.emit("delete", item);
+                    deleteData.item = item.item;
+                    that.socket.emit("deleteItem", deleteData);
                 },
                 onItemUpdated: function(item){
+                    var updateData = {};
                     if(!isUserTable){
-                        item.activeTable = activeTable;
+                        updateData.activeTable = activeTable;
                     }
                     else{
-                        item.activeTable = "USERS";
+                        updateData.activeTable = "USERS";
                     }
-                    that.socket.emit("update",item);
+                    updateData.item = item.item;
+                    that.socket.emit("updateItem",updateData);
                 }
             });
         });
