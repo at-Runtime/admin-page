@@ -1,14 +1,14 @@
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var fs = require('fs');
-var AWS = require("aws-sdk");
-var process = require("process");
+var app = require('express')(); //express handles static file serving for public files
+var http = require('http').Server(app); //static file server
+var io = require('socket.io')(http); //socket.io is a socket library (sockets allow for two way communication between clients and servers)
+var fs = require('fs'); //fs is a filesystem module, it allows me to read files from the the host computer, its c++ equivalent is fstream
+var AWS = require("aws-sdk"); //amazons aws sdk lets me connect to dynamo-db
+var process = require("process"); //This isnt necessary but it allows to check whether the server was run as root or as a normal user
 
-AWS.config.loadFromPath(__dirname + '/config.json');
+AWS.config.loadFromPath(__dirname + '/config.json'); //this config file contains the access key and the secret access key
 
-var docClient = new AWS.DynamoDB.DocumentClient();
-var partitionKeys = {
+var docClient = new AWS.DynamoDB.DocumentClient(); //the docClient object contains methods that allow you to make scan,get,insert, and delete requests to dynamodb
+var partitionKeys = { //DynamoDB hashes items based on a particular field on its table, this object specifies which field is hashed for which table to make managing multiple tables easy to do in a single function
     "BUILDINGS": "Bldg_ID",
     "BUILDINGS_TEST":"aaron_test",
     "Emergency_Phones": "Location",
@@ -20,38 +20,39 @@ var partitionKeys = {
     "USERS": "username",
     "VENDING":"Vending_ID"
 };
-var PORT = 3000;
-if(process.geteuid() == 0){
-    PORT = 80;
+var PORT = 3000; //the default port the server is listening on
+if(process.geteuid() == 0){ //you need root permissions to run on server on port 80
+    PORT = 80; //if we have these root permissions then run on 80, if not run on 3000. When running this server in the debugger it wont have root permissions, so the debugger will connect to port 3000 automaticaly because of this conditional
 }
-app.get('/favicon.ico', function (req, res) {
+//These app.get handles handle get requests for public files
+app.get('/favicon.ico', function (req, res) { //favicon.ico is the little icon in the tab on your browser
     res.sendFile('favicon.ico',{root: __dirname + "/../"});
 });
-app.get('/', function (req, res) {
+app.get('/', function (req, res) { // "/" is the root directory, when someone connects to this port with no path it will default to this file
     res.sendFile('www/html/index.html', {root: __dirname + "/../"});
 });
-app.get('/js/main.js', function (req, res) {
+app.get('/js/main.js', function (req, res) { //the file index.html requests this file
     res.sendFile('www/js/main.js', {root: __dirname + "/../"});
 });
-app.get('/css/change.css', function (req, res) {
+app.get('/css/change.css', function (req, res) { //the file index.html requests this file
     res.sendFile('www/css/change.css', {root: __dirname + "/../"});
 });
-app.get('/css/login.css', function (req, res) {
+app.get('/css/login.css', function (req, res) { //the file index.html requests this file
     res.sendFile('www/css/login.css', {root: __dirname + "/../"});
 });
-app.get('/html/login.html', function (req, res) {
+app.get('/html/login.html', function (req, res) { //the file index.html requests this file
     res.sendFile('www/html/login.html', {root: __dirname + "/../"});
 });
-app.get('/media/campus-map-summer.png', function (req, res) {
+app.get('/media/campus-map-summer.png', function (req, res) { //the file index.html requests this file
     res.sendFile('www/media/campus-map-summer.png', {root: __dirname + "/../"});
 });
 
-io.on('connection', function (socket) {
-    socket.isAuthenticated = false;
-    console.log('a user connected');
-    socket.on('signin', function (req) {
+io.on('connection', function (socket) { //this is an event handler for the initial socket connection, when there is a connection, run this function
+    socket.isAuthenticated = false; //this bool keeps track of whether the user is actually authenticated or not. no operation is possible unless this is set to true
+    console.log('a user connected'); //print to the console
+    socket.on('signin', function (req) { //when a user clicks sign on a 'signin' event is emitted containing an object with the username and password that was typed in. sent as plaintext...? O_o
             console.log("User: " + req.username + " has requested to sign in");
-            var params = {
+            var params = { //this object contains the key i am using to lookup a persons password in the database
                 TableName: "USERS",
                 Key: {
                     "username": req.username
@@ -59,21 +60,21 @@ io.on('connection', function (socket) {
             };
             socket.username = req.username;
             socket.password = req.password;
-            docClient.get(params, function (err, data) {
+            docClient.get(params, function (err, data) { //use docClient to get the user information from the database
                 if (err) {
                     console.log("Error getting user credentials: " + err);
                 }
                 else {
-                    data.Item = data.Item || {username: "", password: ""};
-                    if (socket.password === data.Item.password && data.Item.password != undefined && data.Item.password != "") {
+                    data.Item = data.Item || {username: "", password: ""}; //if a user doesnt type anything into username then the docclient response will be empty so this sets the values to empty strings if the response is empty
+                    if (socket.password === data.Item.password && data.Item.password != undefined && data.Item.password != "") { //make sure the password typed in matches the password in the database and make sure its not undefined or empty
                         console.log("User: " + req.username + " is authenticated");
-                        socket.emit("authenticated", true);
-                        socket.isAuthenticated = true;
+                        socket.emit("authenticated", true); //if they match then the user is authenticated!
+                        socket.isAuthenticated = true; //set the bool to true to allow the user to perform operations once the page loads
                         socket.username = req.username;
-                        socket.access_level = data.Item.access_level;
+                        socket.access_level = data.Item.access_level; //also store the access level because some operations are restricted for some users
                     }
                     else {
-                        console.log("User: " + req.username + " entered invalid credentials");
+                        console.log("User: " + req.username + " entered invalid credentials"); //if the credentials dont match then let the client know it didnt match
                         socket.emit("authenticated", false);
                     }
                 }
@@ -82,9 +83,9 @@ io.on('connection', function (socket) {
 
     });
 
-    socket.on('database', function (msg) {
-        if (socket.isAuthenticated) {
-            fs.readFile(__dirname + '/../www/html/database.html', "utf8", function (err, data) {
+    socket.on('database', function (msg) { //once the client knows its authenticated it will emit 'database' and the server will give it the file "database.html" from the html folder
+        if (socket.isAuthenticated) { //but it will only send the file if its authenticated
+            fs.readFile(__dirname + '/../www/html/database.html', "utf8", function (err, data) { //read the file in and send it
                 if(err){
                     console.log("Error Reading file: " + err);
                 }
@@ -94,24 +95,24 @@ io.on('connection', function (socket) {
             });
         }
         else{
-            socket.emit('database',"ERROR: PLEASE SIGN IN");
+            socket.emit('database',"<h1>ERROR: PLEASE SIGN IN</h1>");
         }
-        socket.on("getTable",function (data) {
-            if(socket.isAuthenticated){
-                docClient.scan({
+        socket.on("getTable",function (data) { //once the client recieves the html for the database page it will request data from the table "BUILDINGS", and if the user clicks on any of the amenity types the client will request data for that table as well
+            if(socket.isAuthenticated){ //only send data if authenticated
+                docClient.scan({ //scan returns all the items in a particular table
                     TableName: data.table
                 }, function (err, res) {
                     if (err) {
                         console.error("Unable to read item. Error JSON:", JSON.stringify(err, null, 2));
-                    } else {
-                        res.Items.forEach(function (t,i) {
+                    } else { //if there are no errors
+                        res.Items.forEach(function (t,i) { //add the index value i to the items list, this makes it easier to track changes to the data once the user edits something
                            t.i = i;
                         });
-                        socket.currTable = res.Items;
-                        if(data.table != "USERS"){
+                        socket.currTable = res.Items; //also store the data from the current table to be used as a reference to the original when the user starts editing
+                        if(data.table != "USERS"){ //if its not the USER table then just send it because everyone with a login can edit this data
                             socket.emit("table", res.Items);
                         }
-                        else{
+                        else{ //if it is the USER table then we need to check and make sure the person has owner access level because admins arent allowed to view or change anyones password
                             if(socket.access_level != "owner"){
                                 socket.emit("table", [{"Error": "You do not have permission to perform this function"}]);
                             }
@@ -123,13 +124,13 @@ io.on('connection', function (socket) {
                 });
             }
         });
-        socket.on("insertItem",function(data){
+        socket.on("insertItem",function(data){ //when the user clicks the green plus sign and then types in data and hits the smaller plus sign, 'insertItem' event will be emit from the socket along with a copy of the item they just tried to insert
             if(socket.isAuthenticated){
-                var params = {
+                var params = { //we want to take that item and insert it into the database, if we did data validation it should be checked here
                     TableName: data.activeTable,
                     Item: data.item
                 };
-                docClient.put(params, function(err, data) {
+                docClient.put(params, function(err, data) { //put method can insert or update an item
                     if (err) {
                         console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
                     } else {
@@ -138,15 +139,15 @@ io.on('connection', function (socket) {
                 });
             }
         });
-        socket.on("deleteItem",function (data) {
+        socket.on("deleteItem",function (data) { //when the user clicks the red trashcan next to an item and hits ok a 'deleteItem' event will be emit.
            if(socket.isAuthenticated){
                var partitionKey = {};
-               partitionKey[partitionKeys[data.activeTable]] = data.item[partitionKeys[data.activeTable]];
+               partitionKey[partitionKeys[data.activeTable]] = data.item[partitionKeys[data.activeTable]]; //you can only delete things if you query based on the partitionkey, this line makes sure the correct one is selected
                var params = {
                    TableName: data.activeTable,
                    Key: partitionKey
                };
-               docClient.delete(params, function(err, data) {
+               docClient.delete(params, function(err, data) { //delete request deletes an item based on its partition key
                    if (err) {
                        console.error("Unable to delete item. Error JSON:", JSON.stringify(err, null, 2));
                    } else {
@@ -155,20 +156,20 @@ io.on('connection', function (socket) {
                });
            }
         });
-        socket.on("updateItem",function(data){
+        socket.on("updateItem",function(data){ //when a user clicks the little pencil, edits the columns and hits the green check, an insertItem event will be emit
             if(socket.isAuthenticated){
-                for(var i=0;i<socket.currTable.length;i++){
+                for(var i=0;i<socket.currTable.length;i++){ //in the reference table find the entry the user is trying to edit based on the i value
                     if(socket.currTable[i].i == data.item.i){
                         break;
                     }
                 }
                 var partitionKey = {};
-                partitionKey[partitionKeys[data.activeTable]] = socket.currTable[i][partitionKeys[data.activeTable]];
+                partitionKey[partitionKeys[data.activeTable]] = socket.currTable[i][partitionKeys[data.activeTable]]; //once found use the original entry to generate the partition key, just in case the partition key is what the user decided to change
                 var params = {
                     TableName: data.activeTable,
                     Key: partitionKey
                 };
-                docClient.delete(params, function(err, res) {
+                docClient.delete(params, function(err, res) { //delete the entry the user tried to change
                     if (err) {
                         console.error("Unable to delete item. Error JSON:", JSON.stringify(err, null, 2));
                     } else {
@@ -177,7 +178,7 @@ io.on('connection', function (socket) {
                             TableName: data.activeTable,
                             Item: data.item
                         };
-                        docClient.put(params2, function(err, data) {
+                        docClient.put(params2, function(err, data) { //when its been deleted, insert the new updated item
                             if (err) {
                                 console.error("Unable to add item. Error JSON:", JSON.stringify(err, null, 2));
                             } else {
@@ -188,52 +189,9 @@ io.on('connection', function (socket) {
                 });
             }
         });
-        socket.on("applyUpdate",function(data){
-            if(socket.isAuthenticated){
-                socket.currTable.forEach(function (t, n) {
-                    for(var i=0;i<data.data.length;i++){
-                        if(t.i == data.data[i].i){
-                            var isDifferent = false;
-                            Object.keys(data.data[i]).forEach(function (k) {
-                               if(data.data[i][k] !== t[k]){
-                                   isDifferent = true;
-                               }
-                            });
-                            if(isDifferent){
-                                //delete old entry and insert new one
-                                console.log("Deleting: " + JSON.stringify(t));
-                                console.log("Inserting: " + JSON.stringify(data.data[i]));
-                                console.log("From table: " + data.activeTable);
-                            }
-                            break;
-                        }
-                    }
-                });
-            }
-        });
     });
 });
 
-function orderKeys(obj, expected) {
-
-    var keys = Object.keys(obj).sort(function keyOrder(k1, k2) {
-        if (k1 < k2) return -1;
-        else if (k1 > k2) return +1;
-        else return 0;
-    });
-
-    var i, after = {};
-    for (i = 0; i < keys.length; i++) {
-        after[keys[i]] = obj[keys[i]];
-        delete obj[keys[i]];
-    }
-
-    for (i = 0; i < keys.length; i++) {
-        obj[keys[i]] = after[keys[i]];
-    }
-    return obj;
-}
-
-http.listen(PORT, function () {
+http.listen(PORT, function () { //start listening on specified port
     console.log('listening on: ' + PORT);
 });
